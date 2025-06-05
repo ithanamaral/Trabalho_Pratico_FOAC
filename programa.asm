@@ -1,0 +1,17 @@
+lb $t1, 0($t0)
+ori $t2, $zero, 5
+sub $t3, $t1, $t2
+ori $t4, $zero, 15
+and $t5, $t3, $t4
+ori $t9, $zero, 240
+ori $t6, $t5, 240
+srl $t7, $t6, 2
+beq $t7, $zero, iguais
+sb $t7, 0($t0)
+beq $zero, $zero, fim
+
+iguais:
+ori $t8, $zero, 255
+sb $t8, 0($t0)
+
+fim:

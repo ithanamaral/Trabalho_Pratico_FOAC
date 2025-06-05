@@ -22,9 +22,9 @@ print('''
 
 nome_arquivo = input("Digite o nome do arquivo sem sua extensão: ")
 
-if os.path.isfile(f"{nome_arquivo}.txt"): #faz verificação da existência do arquivo .txt no repositório
+if os.path.isfile(f"{nome_arquivo}.asm"): #faz verificação da existência do arquivo .txt no repositório
     print("Exibindo conteúdo do arquivo\n")
-    with open(f"{nome_arquivo}.txt", "r", encoding="utf-8") as arquivo: #faz leitura do arquivo
+    with open(f"{nome_arquivo}.asm", "r", encoding="utf-8") as arquivo: #faz leitura do arquivo
         conteudo = arquivo.read()
     print(conteudo)
 else:
@@ -191,4 +191,4 @@ def montar_arquivo(nome_asm):
     
 
 if __name__ == "__main__":
-    montar_arquivo("Assembly.txt")
+    montar_arquivo(f"{nome_arquivo}.asm")
