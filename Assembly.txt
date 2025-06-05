@@ -1,0 +1,42 @@
+.section .data
+valores:    .byte 10           # Valor inicial armazenado em um byte
+resultado:  .space 1           # Espaço para resultado
+
+.section .text
+.globl _start
+
+_start:
+    # Carrega o endereço do dado
+    la t0, valores            # t0 = endereço de 'valores'
+    lb t1, 0(t0)              # t1 = valor armazenado no endereço
+
+    # Subtrai 5 de t1
+    li t2, 5
+    sub t3, t1, t2            # t3 = t1 - 5
+
+    # AND com 0x0F
+    li t4, 0x0F
+    and t5, t3, t4            # t5 = t3 & 0x0F
+
+    # ORI com 0xF0
+    ori t6, t5, 0xF0          # t6 = t5 | 0xF0
+
+    # Shift lógico para a direita (2 bits)
+    srl t7, t6, 2             # t7 = t6 >> 2
+
+    # Verifica se t7 == 0
+    beq t7, zero, iguais      # Se for igual, salta para 'iguais'
+
+    # Se não for zero, salva o valor original processado
+    sb t7, 0(t0)
+    j fim
+
+iguais:
+    li t8, 0xFF
+    sb t8, 0(t0)
+
+fim:
+    # Finaliza o programa (chamada de saída depende do ambiente)
+    li a0, 0          # Código de saída 0
+    li a7, 93         # syscall exit (para Linux RISC-V)
+    ecall
