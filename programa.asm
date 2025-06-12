@@ -1,17 +1,10 @@
-lb $t1, 0($t0)
-ori $t2, $zero, 5
-sub $t3, $t1, $t2
-ori $t4, $zero, 15
-and $t5, $t3, $t4
-ori $t9, $zero, 240
-ori $t6, $t5, 240
-srl $t7, $t6, 2
-beq $t7, $zero, iguais
-sb $t7, 0($t0)
-beq $zero, $zero, fim
+lb x1, 0(x0)         # x1 = MEM[0] (suponha que seja 5, por exemplo)
+sub x2, x1, x1       # x2 = x1 - x1 = 0
+and x3, x1, x1       # x3 = x1 & x1 = x1 (ainda 5)
+ori x4, x3, 15       # x4 = x3 | 0x0F => 5 | 15 = 15
+srl x5, x4, x2       # x5 = x4 >> 0 => 15 >> 0 = 15
+beq x5, x2, igual    # 15 == 0? Não, então não salta
+sb x5, 0(x0)         # MEM[0] = 15
 
-iguais:
-ori $t8, $zero, 255
-sb $t8, 0($t0)
-
-fim:
+igual:
+# não faz nada 

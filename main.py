@@ -19,62 +19,138 @@ print('''
 ██║░░██║██████╔╝██████╔╝███████╗██║░╚═╝░██║██████╦╝███████╗░░░██║░░░
 ╚═╝░░╚═╝╚═════╝░╚═════╝░╚══════╝╚═╝░░░░░╚═╝╚═════╝░╚══════╝░░░╚═╝░░░
       ''')
+nome_arquivo = input("Digite o nome do arquivo sem extensão: ")
 
-
-nome_arquivo = input("Digite o nome do arquivo sem sua extensão: ")
-
-if os.path.isfile(f"{nome_arquivo}.asm"): #faz verificação da existência do arquivo .txt no repositório
-    print("Exibindo conteúdo do arquivo\n")
-    with open(f"{nome_arquivo}.asm", "r", encoding="utf-8") as arquivo: #faz leitura do arquivo
-        conteudo = arquivo.read()
-    print(conteudo)
-else:
+if not os.path.isfile(f"{nome_arquivo}.asm"):
     print("Arquivo não existe no repositório.")
+    exit()
 
-# Tabelas de opcodes e functs
+with open(f"{nome_arquivo}.asm", "r", encoding="utf-8") as f:
+    conteudo = f.read()
+
+print("\nConteúdo do arquivo:\n")
+print(conteudo)
+
+
+# ----- Tabelas RISC-V -----
+
 OPCODES = {
-    'lb':  '100000',
-    'sb':  '101000',
-    'ori': '001101',
-    'beq': '000100',
-    'sub': '000000',
-    'and': '000000',
-    'srl': '000000',
+    'lb':   '0000011',
+    'sb':   '0100011',
+    'ori':  '0010011',
+    'beq':  '1100011',
+    'sub':  '0110011',
+    'and':  '0110011',
+    'srl':  '0110011',
+    'jal':  '1101111',
+    'addi': '0010011',  # usado para li
 }
 
-FUNCTS = {
-    'sub': '100010',
-    'and': '100100',
-    'srl': '000010',
+FUNCT3 = {
+    'lb':  '000',
+    'sb':  '000',
+    'ori': '110',
+    'beq': '000',
+    'sub': '000',
+    'and': '111',
+    'srl': '101',
+    'addi': '000',
 }
 
-# Registradores 
+FUNCT7 = {
+    'sub': '0100000',
+    'and': '0000000',
+    'srl': '0000000',
+}
+
 REGISTROS = {
-    '$zero': '00000',
-    '$at':   '00001',
-    '$v0':   '00010', '$v1': '00011',
-    '$a0':   '00100', '$a1': '00101', '$a2': '00110', '$a3': '00111',
-    '$t0':   '01000', '$t1': '01001', '$t2': '01010', '$t3': '01011',
-    '$t4':   '01100', '$t5': '01101', '$t6': '01110', '$t7': '01111',
-    '$s0':   '10000', '$s1': '10001', '$s2': '10010', '$s3': '10011',
-    '$s4':   '10100', '$s5': '10101', '$s6': '10110', '$s7': '10111',
-    '$t8':   '11000', '$t9': '11001',
-    '$k0':   '11010', '$k1': '11011',
-    '$gp':   '11100',
-    '$sp':   '11101',
-    '$fp':   '11110',
-    '$ra':   '11111',
+    'x0': '00000',
+    'x1': '00001',
+    'x2': '00010',
+    'x3': '00011',
+    'x4': '00100',
+    'x5': '00101',
+    'x6': '00110',
+    'x7': '00111',
+    'x8': '01000',
+    'x9': '01001',
+    'x10': '01010',
+    'x11': '01011',
+    'x12': '01100',
+    'x13': '01101',
+    'x14': '01110',
+    'x15': '01111',
+    'x16': '10000',
+    'x17': '10001',
+    'x18': '10010',
+    'x19': '10011',
+    'x20': '10100',
+    'x21': '10101',
+    'x22': '10110',
+    'x23': '10111',
+    'x24': '11000',
+    'x25': '11001',
+    'x26': '11010',
+    'x27': '11011',
+    'x28': '11100',
+    'x29': '11101',
+    'x30': '11110',
+    'x31': '11111',
 }
 
-def reg_bin(reg): #verifica se o registrador selecionado está na lista
-    if reg not in REGISTROS:
-        raise ValueError(f"Registrador inválido: {reg}")
-    return REGISTROS[reg]
+def reg_bin(r):
+    if r not in REGISTROS:
+        raise ValueError(f"Registrador inválido: {r}")
+    return REGISTROS[r]
 
-def im_bin(valor, bits=16):
-    return format((valor & ((1 << bits) - 1)), f'0{bits}b')
+def im_bin(valor, bits):
+    """Imediato com sinal, bits bits."""
+    if valor < 0:
+        valor = (1 << bits) + valor
+    return format(valor, f'0{bits}b')
 
-def montar_linha(linha):
+def montar_r_type(instr, rd, rs1, rs2):
+    funct7 = FUNCT7.get(instr, '0000000')
+    funct3 = FUNCT3[instr]
+    opcode = OPCODES[instr]
+    return funct7 + reg_bin(rs2) + reg_bin(rs1) + funct3 + reg_bin(rd) + opcode
+
+def montar_i_type(instr, rd, rs1, imm):
+    funct3 = FUNCT3[instr]
+    opcode = OPCODES[instr]
+    imm_bin = im_bin(imm, 12)
+    return imm_bin + reg_bin(rs1) + funct3 + reg_bin(rd) + opcode
+
+def montar_s_type(instr, rs1, rs2, imm):
+    funct3 = FUNCT3[instr]
+    opcode = OPCODES[instr]
+    imm_bin = im_bin(imm, 12)
+    imm_11_5 = imm_bin[:7]
+    imm_4_0 = imm_bin[7:]
+    return imm_11_5 + reg_bin(rs2) + reg_bin(rs1) + funct3 + imm_4_0 + opcode
+
+def montar_b_type(instr, rs1, rs2, imm):
+    funct3 = FUNCT3[instr]
+    opcode = OPCODES[instr]
+    imm_bin = im_bin(imm, 13)  # 13 bits porque desvio 12 bits + bit 0 omitido
+    # bits: imm[12], imm[10:5], rs2, rs1, funct3, imm[4:1], imm[11], opcode
+    imm_12 = imm_bin[0]
+    imm_10_5 = imm_bin[2:8]
+    imm_4_1 = imm_bin[8:12]
+    imm_11 = imm_bin[1]
+    return imm_12 + imm_10_5 + reg_bin(rs2) + reg_bin(rs1) + funct3 + imm_4_1 + imm_11 + opcode
+
+def montar_j_type(instr, rd, imm):
+    opcode = OPCODES[instr]
+    imm_bin = im_bin(imm, 21)  # 20 bits + bit 0 omitido
+    # bits: imm[20], imm[10:1], imm[11], imm[19:12], rd, opcode
+    imm_20 = imm_bin[0]
+    imm_10_1 = imm_bin[10:20]
+    imm_11 = imm_bin[9]
+    imm_19_12 = imm_bin[1:9]
+    return imm_20 + imm_19_12 + imm_11 + imm_10_1 + reg_bin(rd) + opcode
+
+def montar_linha(linha, labels=None, pc=0):
     linha = linha.strip()
     if not linha or linha.startswith('#'):
         return None
@@ -82,56 +158,81 @@ def montar_linha(linha):
     tokens = re.split(r'[,\s()]+', linha)
     instr = tokens[0]
 
-    if instr in ['sub', 'and']:
-        # sub rd, rs, rt
-        rd, rs, rt = reg_bin(tokens[1]), reg_bin(tokens[2]), reg_bin(tokens[3])
-        opcode = '000000'
-        shamt = '00000'
-        funct = FUNCTS[instr]
-        return opcode + rs + rt + rd + shamt + funct
+    if instr == 'sub' or instr == 'and':
+        # sub rd, rs1, rs2
+        rd, rs1, rs2 = tokens[1], tokens[2], tokens[3]
+        return montar_r_type(instr, rd, rs1, rs2)
 
     elif instr == 'srl':
-        # srl rd, rt, shamt
-        rd, rt = reg_bin(tokens[1]), reg_bin(tokens[2])
-        shamt = im_bin(int(tokens[3]), 5)
-        rs = '00000'
-        opcode = '000000'
-        funct = FUNCTS['srl']
-        return opcode + rs + rt + rd + shamt + funct
+        # srl rd, rs1, rs2  (Tipo R)
+        rd, rs1, rs2 = tokens[1], tokens[2], tokens[3]
+        return montar_r_type(instr, rd, rs1, rs2)
 
-    elif instr in ['lb', 'sb']:
-        # lb rt, offset(rs)
-        rt = reg_bin(tokens[1])
+    elif instr == 'srli':
+        # srli rd, rs1, shamt (Tipo I)
+        rd, rs1, shamt = tokens[1], tokens[2], int(tokens[3])
+        return montar_i_type('ori', rd, rs1, shamt)  # ou uma função dedicada
+
+    elif instr == 'lb':
+        # lb rd, offset(rs1)
+        rd = tokens[1]
         offset = int(tokens[2])
-        rs = reg_bin(tokens[3])
-        opcode = OPCODES[instr]
-        return opcode + rs + rt + im_bin(offset, 16)
+        rs1 = tokens[3]
+        return montar_i_type(instr, rd, rs1, offset)
+
+    elif instr == 'sb':
+        # sb rs2, offset(rs1)
+        rs2 = tokens[1]
+        offset = int(tokens[2])
+        rs1 = tokens[3]
+        return montar_s_type(instr, rs1, rs2, offset)
 
     elif instr == 'ori':
-        # ori rt, rs, immediate
-        rt = reg_bin(tokens[1])
-        rs = reg_bin(tokens[2])
-        imm = int(tokens[3])
-        opcode = OPCODES[instr]
-        return opcode + rs + rt + im_bin(imm, 16)
+        # ori rd, rs1, imm
+        rd, rs1, imm = tokens[1], tokens[2], int(tokens[3])
+        return montar_i_type(instr, rd, rs1, imm)
+
+    elif instr == 'addi':
+        # addi rd, rs1, imm (para li simplificado)
+        rd, rs1, imm = tokens[1], tokens[2], int(tokens[3])
+        return montar_i_type(instr, rd, rs1, imm)
 
     elif instr == 'beq':
-        # beq rs, rt, offset
-        rs = reg_bin(tokens[1])
-        rt = reg_bin(tokens[2])
-        offset = int(tokens[3])  # Para simplificação
-        opcode = OPCODES['beq']
-        return opcode + rs + rt + im_bin(offset, 16)
+        rs1, rs2, label = tokens[1], tokens[2], tokens[3]
+        if labels and label in labels:
+            offset = labels[label] - pc
+            # Offset em bytes / 4 pois PC conta instruções
+            imm = offset
+            return montar_b_type(instr, rs1, rs2, imm)
+        else:
+            # Se não tem labels, tenta offset direto
+            imm = int(label)
+            return montar_b_type(instr, rs1, rs2, imm)
+
+    elif instr == 'jal':
+        # jal rd, label
+        rd, label = tokens[1], tokens[2]
+        if labels and label in labels:
+            offset = labels[label] - pc
+            return montar_j_type(instr, rd, offset)
+        else:
+            imm = int(label)
+            return montar_j_type(instr, rd, imm)
+
+    elif instr == 'li':
+        # li rd, imm (pseudo-instrução = addi rd, x0, imm)
+        rd, imm = tokens[1], int(tokens[2])
+        return montar_i_type('addi', rd, 'x0', imm)
 
     else:
-        print(f"Instrução desconhecida: {instr}")
+        print(f"Instrução desconhecida ou não suportada: {instr}")
         return None
 
 def montar_arquivo(nome_asm):
     with open(nome_asm, "r") as arq:
         linhas = arq.readlines()
 
-    # 1ª passada – mapear labels
+    # 1ª passada: mapear labels
     labels = {}
     pc = 0
     for linha in linhas:
@@ -139,57 +240,43 @@ def montar_arquivo(nome_asm):
         if linha_limpa.endswith(':'):
             label = linha_limpa[:-1]
             labels[label] = pc
-        elif linha_limpa:  # só conta instruções
+        elif linha_limpa:
             pc += 1
 
-    # 2ª passada – montar instruções com labels resolvidos
+    # 2ª passada: montar instruções com labels resolvidas
     binarios = []
     pc = 0
     for linha in linhas:
         linha = linha.strip()
         if not linha or linha.endswith(':'):
             continue
-
-        tokens = re.split(r'[,\s()]+', linha)
-        instr = tokens[0]
-
-        if instr == "beq" and not tokens[3].isdigit():
-            # Se for label, calcula offset relativo
-            rs = reg_bin(tokens[1])
-            rt = reg_bin(tokens[2])
-            destino = tokens[3]
-            offset = labels[destino] - (pc + 1)
-            opcode = OPCODES[instr]
-            cod = opcode + rs + rt + im_bin(offset, 16)
-        else:
-            cod = montar_linha(linha)
-
+        cod = montar_linha(linha, labels, pc)
         if cod:
             binarios.append(cod)
             pc += 1
+
     print("Você quer:")
     print("1 - Arquivo em Binário")
     print("2 - Binário no terminal")
     print("3 - Ambos")
-    decisao= int(input("Digite sua decisão: "))
+    decisao = int(input("Digite sua decisão: "))
     print("\n")
+
     if decisao == 3:
         with open("saida.bin", "wb") as saida:
             for b in binarios:
                 print(b)
-                saida.write(int(b, 2).to_bytes(4, byteorder="big"))
-            print("\nArquivo 'saida.bin' gerado e binário no terminal também !")
+                saida.write(int(b, 2).to_bytes(4, byteorder="little"))
+        print("\nArquivo 'saida.bin' gerado e binário no terminal também!")
     elif decisao == 2:
-            for b in binarios:
-                print(b)
-            print("\nBinário acima")
+        for b in binarios:
+            print(b)
+        print("\nBinário acima")
     elif decisao == 1:
         with open("saida.bin", "wb") as saida:
             for b in binarios:
-                saida.write(int(b, 2).to_bytes(4, byteorder="big"))
+                saida.write(int(b, 2).to_bytes(4, byteorder="little"))
         print("\nMontagem concluída! Arquivo 'saida.bin' gerado.")
-
-    
 
 if __name__ == "__main__":
     montar_arquivo(f"{nome_arquivo}.asm")
