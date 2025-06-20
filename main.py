@@ -1,5 +1,5 @@
-import os #para importar arquivos
-import re #para seprar os comandos Asssembly
+import os 
+import re 
 
 ''' O presente programa visa operar como um Montador da linguagem Assembly para linguagem de máquina(binário) '''
 
@@ -32,8 +32,6 @@ print("\nConteúdo do arquivo:\n")
 print(conteudo)
 
 
-# ----- Tabelas RISC-V -----
-
 OPCODES = {
     'lb':   '0000011',
     'sb':   '0100011',
@@ -43,7 +41,7 @@ OPCODES = {
     'and':  '0110011',
     'srl':  '0110011',
     'jal':  '1101111',
-    'addi': '0010011',  # usado para li
+    'addi': '0010011',  
 }
 
 FUNCT3 = {
@@ -104,7 +102,7 @@ def reg_bin(r):
     return REGISTROS[r]
 
 def im_bin(valor, bits):
-    """Imediato com sinal, bits bits."""
+    """Transforma o valor em bits pelo complemento de 2"""
     if valor < 0:
         valor = (1 << bits) + valor
     return format(valor, f'0{bits}b')
@@ -132,8 +130,7 @@ def montar_s_type(instr, rs1, rs2, imm):
 def montar_b_type(instr, rs1, rs2, imm):
     funct3 = FUNCT3[instr]
     opcode = OPCODES[instr]
-    imm_bin = im_bin(imm, 13)  # 13 bits porque desvio 12 bits + bit 0 omitido
-    # bits: imm[12], imm[10:5], rs2, rs1, funct3, imm[4:1], imm[11], opcode
+    imm_bin = im_bin(imm, 13) 
     imm_12 = imm_bin[0]
     imm_10_5 = imm_bin[2:8]
     imm_4_1 = imm_bin[8:12]
@@ -142,8 +139,7 @@ def montar_b_type(instr, rs1, rs2, imm):
 
 def montar_j_type(instr, rd, imm):
     opcode = OPCODES[instr]
-    imm_bin = im_bin(imm, 21)  # 20 bits + bit 0 omitido
-    # bits: imm[20], imm[10:1], imm[11], imm[19:12], rd, opcode
+    imm_bin = im_bin(imm, 21)  
     imm_20 = imm_bin[0]
     imm_10_1 = imm_bin[10:20]
     imm_11 = imm_bin[9]
@@ -159,41 +155,34 @@ def montar_linha(linha, labels=None, pc=0):
     instr = tokens[0]
 
     if instr == 'sub' or instr == 'and':
-        # sub rd, rs1, rs2
         rd, rs1, rs2 = tokens[1], tokens[2], tokens[3]
         return montar_r_type(instr, rd, rs1, rs2)
 
     elif instr == 'srl':
-        # srl rd, rs1, rs2  (Tipo R)
         rd, rs1, rs2 = tokens[1], tokens[2], tokens[3]
         return montar_r_type(instr, rd, rs1, rs2)
 
     elif instr == 'srli':
-        # srli rd, rs1, shamt (Tipo I)
         rd, rs1, shamt = tokens[1], tokens[2], int(tokens[3])
         return montar_i_type('ori', rd, rs1, shamt)  # ou uma função dedicada
 
     elif instr == 'lb':
-        # lb rd, offset(rs1)
         rd = tokens[1]
         offset = int(tokens[2])
         rs1 = tokens[3]
         return montar_i_type(instr, rd, rs1, offset)
 
     elif instr == 'sb':
-        # sb rs2, offset(rs1)
         rs2 = tokens[1]
         offset = int(tokens[2])
         rs1 = tokens[3]
         return montar_s_type(instr, rs1, rs2, offset)
 
     elif instr == 'ori':
-        # ori rd, rs1, imm
         rd, rs1, imm = tokens[1], tokens[2], int(tokens[3])
         return montar_i_type(instr, rd, rs1, imm)
 
     elif instr == 'addi':
-        # addi rd, rs1, imm (para li simplificado)
         rd, rs1, imm = tokens[1], tokens[2], int(tokens[3])
         return montar_i_type(instr, rd, rs1, imm)
 
@@ -201,16 +190,13 @@ def montar_linha(linha, labels=None, pc=0):
         rs1, rs2, label = tokens[1], tokens[2], tokens[3]
         if labels and label in labels:
             offset = labels[label] - pc
-            # Offset em bytes / 4 pois PC conta instruções
             imm = offset
             return montar_b_type(instr, rs1, rs2, imm)
         else:
-            # Se não tem labels, tenta offset direto
             imm = int(label)
             return montar_b_type(instr, rs1, rs2, imm)
 
     elif instr == 'jal':
-        # jal rd, label
         rd, label = tokens[1], tokens[2]
         if labels and label in labels:
             offset = labels[label] - pc
@@ -220,7 +206,6 @@ def montar_linha(linha, labels=None, pc=0):
             return montar_j_type(instr, rd, imm)
 
     elif instr == 'li':
-        # li rd, imm (pseudo-instrução = addi rd, x0, imm)
         rd, imm = tokens[1], int(tokens[2])
         return montar_i_type('addi', rd, 'x0', imm)
 
@@ -232,7 +217,6 @@ def montar_arquivo(nome_asm):
     with open(nome_asm, "r") as arq:
         linhas = arq.readlines()
 
-    # 1ª passada: mapear labels
     labels = {}
     pc = 0
     for linha in linhas:
@@ -243,7 +227,6 @@ def montar_arquivo(nome_asm):
         elif linha_limpa:
             pc += 1
 
-    # 2ª passada: montar instruções com labels resolvidas
     binarios = []
     pc = 0
     for linha in linhas:
@@ -263,17 +246,17 @@ def montar_arquivo(nome_asm):
     print("\n")
 
     if decisao == 3:
-        with open("saida.bin", "wb") as saida:
+        with open("saida.txt", "wb") as saida:
             for b in binarios:
                 print(b)
                 saida.write(int(b, 2).to_bytes(4, byteorder="little"))
-        print("\nArquivo 'saida.bin' gerado e binário no terminal também!")
+        print("\nArquivo 'saida.txt' gerado e binário no terminal também!")
     elif decisao == 2:
         for b in binarios:
             print(b)
         print("\nBinário acima")
     elif decisao == 1:
-        with open("saida.bin", "wb") as saida:
+        with open("saida.txt", "wb") as saida:
             for b in binarios:
                 saida.write(int(b, 2).to_bytes(4, byteorder="little"))
         print("\nMontagem concluída! Arquivo 'saida.bin' gerado.")
