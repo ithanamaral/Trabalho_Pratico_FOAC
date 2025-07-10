@@ -111,13 +111,13 @@ def montar_r_type(instr, rd, rs1, rs2):
     funct7 = FUNCT7.get(instr, '0000000') #se não tiver instrução devolve 0
     funct3 = FUNCT3[instr]
     opcode = OPCODES[instr]
-    return funct7 + reg_bin(rs2) + reg_bin(rs1) + funct3 + reg_bin(rd) + opcode  #Soma os funct e opcode com o valor de cada registrador correspondente
+    return funct7 + reg_bin(rs2) + reg_bin(rs1) + funct3 + reg_bin(rd) + opcode  #Concatena os funct e opcode com o valor de cada registrador correspondente
 
 def montar_i_type(instr, rd, rs1, imm):
     funct3 = FUNCT3[instr]
     opcode = OPCODES[instr]
-    imm_bin = im_bin(imm, 12)
-    return imm_bin + reg_bin(rs1) + funct3 + reg_bin(rd) + opcode
+    imm_bin = im_bin(imm, 12) #transforma a constante em binário
+    return imm_bin + reg_bin(rs1) + funct3 + reg_bin(rd) + opcode #monta o tipo, concatenando as strings 
 
 def montar_s_type(instr, rs1, rs2, imm):
     funct3 = FUNCT3[instr]
