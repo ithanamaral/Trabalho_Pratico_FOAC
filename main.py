@@ -99,7 +99,7 @@ REGISTROS = {
 def reg_bin(r):
     if r not in REGISTROS:
         raise ValueError(f"Registrador inválido: {r}")
-    return REGISTROS[r]
+    return REGISTROS[r] #retorna valor do registrador
 
 def im_bin(valor, bits):
     """Transforma o valor em bits pelo complemento de 2"""
@@ -108,10 +108,10 @@ def im_bin(valor, bits):
     return format(valor, f'0{bits}b')
 
 def montar_r_type(instr, rd, rs1, rs2):
-    funct7 = FUNCT7.get(instr, '0000000')
+    funct7 = FUNCT7.get(instr, '0000000') #se não tiver instrução devolve 0
     funct3 = FUNCT3[instr]
     opcode = OPCODES[instr]
-    return funct7 + reg_bin(rs2) + reg_bin(rs1) + funct3 + reg_bin(rd) + opcode
+    return funct7 + reg_bin(rs2) + reg_bin(rs1) + funct3 + reg_bin(rd) + opcode  #Soma os funct e opcode com o valor de cada registrador correspondente
 
 def montar_i_type(instr, rd, rs1, imm):
     funct3 = FUNCT3[instr]
