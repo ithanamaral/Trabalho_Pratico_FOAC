@@ -130,16 +130,16 @@ def montar_s_type(instr, rs1, rs2, imm):
 def montar_b_type(instr, rs1, rs2, imm):
     funct3 = FUNCT3[instr]
     opcode = OPCODES[instr]
-    imm_bin = im_bin(imm, 13) 
-    imm_12 = imm_bin[0]
-    imm_10_5 = imm_bin[2:8]
-    imm_4_1 = imm_bin[8:12]
-    imm_11 = imm_bin[1]
-    return imm_12 + imm_10_5 + reg_bin(rs2) + reg_bin(rs1) + funct3 + imm_4_1 + imm_11 + opcode
+    imm_bin = im_bin(imm, 13) #os imediatos de tipo b utilizam 13 bits
+    imm_12 = imm_bin[0] #extrai o bit mais significativo
+    imm_10_5 = imm_bin[2:8] #extrai do bit 2 ao 8
+    imm_4_1 = imm_bin[8:12] #extrai do bit 8 ao último (12)
+    imm_11 = imm_bin[1] #extrai o segundo bit mais significativo
+    return imm_12 + imm_10_5 + reg_bin(rs2) + reg_bin(rs1) + funct3 + imm_4_1 + imm_11 + opcode #monta o tipo concatenando as string
 
 def montar_j_type(instr, rd, imm):
     opcode = OPCODES[instr]
-    imm_bin = im_bin(imm, 21)  
+    imm_bin = im_bin(imm, 21) #os imediatos de tipo j utilizam 21 bits
     imm_20 = imm_bin[0]
     imm_10_1 = imm_bin[10:20]
     imm_11 = imm_bin[9]
@@ -147,12 +147,12 @@ def montar_j_type(instr, rd, imm):
     return imm_20 + imm_19_12 + imm_11 + imm_10_1 + reg_bin(rd) + opcode
 
 def montar_linha(linha, labels=None, pc=0):
-    linha = linha.strip()
+    linha = linha.strip() #remove espaços
     if not linha or linha.startswith('#'):
         return None
 
-    tokens = re.split(r'[,\s()]+', linha)
-    instr = tokens[0]
+    tokens = re.split(r'[,\s()]+', linha) #quebra a linha por vírgula ou caracter
+    instr = tokens[0] #atribui a instr a instrução da linha quebrada, que é a primeira posição
 
     if instr == 'sub' or instr == 'and':
         rd, rs1, rs2 = tokens[1], tokens[2], tokens[3]
@@ -246,17 +246,17 @@ def montar_arquivo(nome_asm):
     print("\n")
 
     if decisao == 3:
-        with open("saida.txt", "wb") as saida:
+        with open("saida.bin", "wb") as saida:
             for b in binarios:
                 print(b)
                 saida.write(int(b, 2).to_bytes(4, byteorder="little"))
-        print("\nArquivo 'saida.txt' gerado e binário no terminal também!")
+        print("\nArquivo 'saida.bin' gerado e binário no terminal também!")
     elif decisao == 2:
         for b in binarios:
             print(b)
         print("\nBinário acima")
     elif decisao == 1:
-        with open("saida.txt", "wb") as saida:
+        with open("saida.bin", "wb") as saida:
             for b in binarios:
                 saida.write(int(b, 2).to_bytes(4, byteorder="little"))
         print("\nMontagem concluída! Arquivo 'saida.bin' gerado.")
