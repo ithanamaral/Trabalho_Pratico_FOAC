@@ -123,9 +123,9 @@ def montar_s_type(instr, rs1, rs2, imm):
     funct3 = FUNCT3[instr]
     opcode = OPCODES[instr]
     imm_bin = im_bin(imm, 12)
-    imm_11_5 = imm_bin[:7]
-    imm_4_0 = imm_bin[7:]
-    return imm_11_5 + reg_bin(rs2) + reg_bin(rs1) + funct3 + imm_4_0 + opcode
+    imm_11_5 = imm_bin[:7]  #Pega os bits da posição 11 a 5, logo 7 bits mais significativos
+    imm_4_0 = imm_bin[7:]   #Pega os bits da posição 4 a 0, logo 5 bits menos significativos
+    return imm_11_5 + reg_bin(rs2) + reg_bin(rs1) + funct3 + imm_4_0 + opcode #monta o tipo concatenando as string
 
 def montar_b_type(instr, rs1, rs2, imm):
     funct3 = FUNCT3[instr]
